@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Electricity Bill - Bill Entry</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0f172a;          /* slate-900 */
+      --card:#111827;        /* gray-900 */
+      --muted:#94a3b8;       /* slate-400 */
+      --text:#e5e7eb;        /* gray-200 */
+      --brand:#10b981;       /* emerald-500 */
+      --brand-2:#22c55e;     /* green-500 */
+      --danger:#ef4444;      /* red-500 */
+      --warning:#f59e0b;     /* amber-500 */
+      --border:#1f2937;      /* gray-800 */
+      --input:#0b1222;       /* deep field */
+      --ring:#0284c7;        /* sky-600 */
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,"Noto Sans",sans-serif;
+      background:linear-gradient(180deg,var(--bg),#0b1020 60%);
+      color:var(--text);
+    }
+
+    /* Top Nav */
+    .nav{
+      position:sticky;top:0;z-index:10;
+      display:flex;align-items:center;justify-content:space-between;
+      padding:14px 22px;border-bottom:1px solid var(--border);
+      background:rgba(15,23,42,.7);backdrop-filter: blur(10px);
+    }
+    .brand{display:flex;gap:10px;align-items:center;font-weight:700;letter-spacing:.3px}
+    .brand .logo{width:36px;height:36px;border-radius:12px;background:radial-gradient(60% 60% at 40% 35%, #34d399 0%, #059669 65%, transparent 66%),linear-gradient(135deg,#111827,#0b1222);box-shadow:0 4px 18px rgba(16,185,129,.35) inset, 0 8px 30px rgba(0,0,0,.5)}
+    .menu{display:flex;gap:6px;align-items:center}
+    .menu a{
+      text-decoration:none;color:var(--text);font-weight:500;
+      padding:10px 14px;border-radius:10px;border:1px solid transparent
+    }
+    .menu a.active{background:#0b1222;border-color:var(--border)}
+    .menu a:hover{border-color:#263246}
+    .logout{margin-left:8px}
+    .btn{
+      display:inline-flex;align-items:center;gap:10px;cursor:pointer;
+      padding:10px 14px;border-radius:12px;border:1px solid var(--border);
+      background:#0b1222;color:var(--text);font-weight:600
+    }
+    .btn.primary{background:linear-gradient(180deg,var(--brand),var(--brand-2));color:#062a1a;border:none}
+    .btn.warn{background:linear-gradient(180deg,#f59e0b,#fbbf24);color:#3b2a05;border:none}
+    .btn.danger{background:linear-gradient(180deg,#ef4444,#f87171);color:#2b0b0b;border:none}
+
+    /* Page shell */
+    .wrap{max-width:1100px;margin:26px auto;padding:0 18px}
+    .page-title{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:10px 0 18px}
+    .page-title h1{font-size:clamp(20px,2vw,28px);margin:0;letter-spacing:.2px}
+    .crumbs{color:var(--muted);font-size:14px}
+
+    /* Card */
+    .card{background:linear-gradient(180deg,#0c1429,#0b1222);border:1px solid var(--border);border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.35);padding:20px}
+    .card + .card{margin-top:16px}
+
+    /* Grid form */
+    form{margin-top:8px}
+    .grid{display:grid;gap:14px}
+    @media (min-width: 760px){
+      .grid.cols-2{grid-template-columns:repeat(2,1fr)}
+      .grid.cols-3{grid-template-columns:repeat(3,1fr)}
+    }
+
+    .field{display:flex;flex-direction:column;gap:8px}
+    label{font-weight:600;font-size:14px}
+    .hint{font-size:12px;color:var(--muted)}
+    input,select,textarea{
+      width:100%;padding:12px 12px;border-radius:12px;
+      border:1px solid var(--border);background:var(--input);color:var(--text);
+      outline:none;box-shadow:0 0 0 0 transparent;transition:.15s ease;
+    }
+    input:focus,select:focus,textarea:focus{border-color:var(--ring);box-shadow:0 0 0 4px rgba(2,132,199,.15)}
+    input[readonly]{opacity:.8}
+
+    /* Totals */
+    .totals{
+      display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+      margin-top:6px
+    }
+    .kpi{border:1px solid var(--border);border-radius:16px;padding:14px;background:linear-gradient(180deg,#0b1222,#0a1020)}
+    .kpi h3{margin:0 0 4px;font-size:12px;color:var(--muted);font-weight:600}
+    .kpi .val{font-size:22px;font-weight:800}
+
+    .actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+
+    /* Table preview */
+    table{width:100%;border-collapse:collapse;background:#0a1020;border-radius:12px;overflow:hidden}
+    th,td{padding:12px;border-bottom:1px solid var(--border);text-align:left}
+    th{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.6px}
+    tfoot td{font-weight:800}
+
+    .note{color:var(--muted);font-size:13px;margin-top:8px}
+  </style>
+</head>
+<body>
+  <!-- Top Navigation -->
+  <header class="nav">
+    <div class="brand"><div class="logo" aria-hidden="true"></div>Electricity Bill</div>
+    <nav class="menu">
+      <a href="#" >Home</a>
+      <a href="#" class="active">Bill Entry</a>
+      <a href="#">Reports</a>
+      <a href="#" class="btn logout">Logout</a>
+    </nav>
+  </header>
+
+  <main class="wrap">
+    <div class="page-title">
+      <h1>Bill Entry</h1>
+      <div class="crumbs">Dashboard ▸ Billing ▸ Bill Entry</div>
+    </div>
+
+    <!-- Consumer & Connection Details -->
+    <section class="card">
+      <h2 style="margin:0 0 10px">Consumer Details</h2>
+      <form id="billForm" novalidate>
+        <div class="grid cols-3">
+          <div class="field">
+            <label for="connType">Connection Type</label>
+            <select id="connType" name="connType" required>
+              <option value="Domestic" selected>Domestic</option>
+              <option value="Commercial">Commercial</option>
+              <option value="Industrial">Industrial</option>
+            </select>
+            <div class="hint">Used to pick default tariff</div>
+          </div>
+          <div class="field">
+            <label for="consumerNo">Consumer Number</label>
+            <input id="consumerNo" name="consumerNo" type="text" required placeholder="e.g. GEB-123456" pattern="[A-Za-z0-9-]{6,}" />
+          </div>
+          <div class="field">
+            <label for="meterNo">Meter Number</label>
+            <input id="meterNo" name="meterNo" type="text" placeholder="e.g. MTR-778899" />
+          </div>
+        </div>
+
+        <div class="grid cols-2" style="margin-top:8px">
+          <div class="field">
+            <label for="name">Consumer Name</label>
+            <input id="name" name="name" type="text" required placeholder="Full name" />
+          </div>
+          <div class="field">
+            <label for="phone">Phone</label>
+            <input id="phone" name="phone" type="tel" placeholder="10-digit" pattern="[0-9]{10}" />
+          </div>
+          <div class="field" style="grid-column:1/-1">
+            <label for="address">Address</label>
+            <textarea id="address" name="address" rows="2" placeholder="House / Street, Area, City, PIN"></textarea>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <!-- Reading & Tariff -->
+    <section class="card">
+      <h2 style="margin:0 0 10px">Reading & Tariff</h2>
+      <div class="grid cols-3">
+        <div class="field">
+          <label for="billMonth">Billing Month</label>
+          <input id="billMonth" name="billMonth" type="month" required />
+        </div>
+        <div class="field">
+          <label for="prevReading">Previous Reading (kWh)</label>
+          <input id="prevReading" type="number" inputmode="decimal" min="0" step="0.01" value="0" />
+        </div>
+        <div class="field">
+          <label for="currReading">Current Reading (kWh)</label>
+          <input id="currReading" type="number" inputmode="decimal" min="0" step="0.01" value="0" />
+        </div>
+      </div>
+      <div class="grid cols-3" style="margin-top:8px">
+        <div class="field">
+          <label for="units">Units Consumed (kWh)</label>
+          <input id="units" type="number" readonly value="0" />
+        </div>
+        <div class="field">
+          <label for="tariff">Tariff (₹/kWh)</label>
+          <input id="tariff" type="number" inputmode="decimal" min="0" step="0.01" value="6.50" />
+          <div class="hint">Adjust as per slab/connection</div>
+        </div>
+        <div class="field">
+          <label for="fixed">Fixed Charge (₹)</label>
+          <input id="fixed" type="number" inputmode="decimal" min="0" step="0.01" value="75" />
+        </div>
+      </div>
+      <div class="grid cols-3" style="margin-top:8px">
+        <div class="field">
+          <label for="meterRent">Meter Rent (₹)</label>
+          <input id="meterRent" type="number" inputmode="decimal" min="0" step="0.01" value="20" />
+        </div>
+        <div class="field">
+          <label for="taxPct">GST / Tax (%)</label>
+          <input id="taxPct" type="number" inputmode="decimal" min="0" step="0.01" value="18" />
+        </div>
+        <div class="field">
+          <label for="latePct">Late Fee (%)</label>
+          <input id="latePct" type="number" inputmode="decimal" min="0" step="0.01" value="0" />
+        </div>
+      </div>
+
+      <div class="totals">
+        <div class="kpi"><h3>Energy Charge</h3><div class="val" id="kpiEnergy">₹0.00</div></div>
+        <div class="kpi"><h3>Tax Amount</h3><div class="val" id="kpiTax">₹0.00</div></div>
+        <div class="kpi"><h3>Late Fee</h3><div class="val" id="kpiLate">₹0.00</div></div>
+        <div class="kpi"><h3>Grand Total</h3><div class="val" id="kpiTotal">₹0.00</div></div>
+      </div>
+
+      <div class="actions">
+        <button class="btn primary" id="btnCalc" type="button">Calculate</button>
+        <button class="btn" id="btnSave" type="button">Save Entry</button>
+        <button class="btn warn" id="btnClear" type="button">Clear</button>
+        <button class="btn" id="btnPrint" type="button">Print Preview</button>
+      </div>
+      <div class="note">Note: This is a front‑end bill entry page (HTML + CSS + a little JS). Connect it to your backend to persist bills and generate official PDFs/receipts.</div>
+    </section>
+
+    <!-- Mini Preview -->
+    <section class="card">
+      <h2 style="margin:0 0 10px">Bill Preview</h2>
+      <table id="preview">
+        <thead>
+          <tr>
+            <th>Consumer</th>
+            <th>Month</th>
+            <th>Units</th>
+            <th>Tariff</th>
+            <th>Fixed</th>
+            <th>Meter</th>
+            <th>Tax %</th>
+            <th>Late %</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td colspan="9" style="text-align:center;color:var(--muted)">No data yet. Click <strong>Calculate</strong> to preview.</td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="8" style="text-align:right">Grand Total</td>
+            <td id="tfootTotal">₹0.00</td>
+          </tr>
+        </tfoot>
+      </table>
+    </section>
+  </main>
+
+  <!-- Optional minimal JS for calculations (remove if you strictly want only HTML & CSS) -->
+ <!-- <script>
+    const el = (id)=>document.getElementById(id);
+    const money = (n)=>`₹${Number(n||0).toFixed(2)}`;
+
+    const fields = ["prevReading","currReading","units","tariff","fixed","meterRent","taxPct","latePct","connType"];
+
+    function compute(){
+      const prev = parseFloat(el('prevReading').value)||0;
+      const curr = parseFloat(el('currReading').value)||0;
+      const units = Math.max(0, curr - prev);
+      el('units').value = units.toFixed(2);
+
+      const tariff = parseFloat(el('tariff').value)||20;
+      const fixed = parseFloat(el('fixed').value)||0;
+      const rent = parseFloat(el('meterRent').value)||0;
+      const taxPct = parseFloat(el('taxPct').value)||
